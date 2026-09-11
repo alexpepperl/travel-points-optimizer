@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Travel Points Optimizer — Points vs. Cash</title>
+<style>
+  :root {
+    --bg: #f3f5f9;
+    --panel: #ffffff;
+    --panel-2: #f7f9fc;
+    --ink: #16202e;
+    --ink-soft: #4a5a6f;
+    --ink-faint: #7c8aa0;
+    --line: #e1e7f0;
+    --brand: #2f6df6;
+    --brand-ink: #ffffff;
+    --good: #18794e;
+    --good-bg: #e7f6ee;
+    --warn: #9a6b00;
+    --warn-bg: #fdf3df;
+    --bad: #b42318;
+    --bad-bg: #fdecea;
+    --win-bg: #ecf3ff;
+    --win-line: #2f6df6;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(16,32,46,.06), 0 8px 24px rgba(16,32,46,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1420;
+      --panel: #161e2c;
+      --panel-2: #1c2636;
+      --ink: #eaf0f8;
+      --ink-soft: #aab8cc;
+      --ink-faint: #7b8aa0;
+      --line: #28344a;
+      --brand: #4f86ff;
+      --good: #5fd3a0;
+      --good-bg: #13322a;
+      --warn: #e7b85a;
+      --warn-bg: #332a16;
+      --bad: #f1837a;
+      --bad-bg: #3a1f1d;
+      --win-bg: #16243f;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin-inline: auto; padding: 28px 20px 60px; }
+  header.app { margin-bottom: 22px; }
+  .app h1 { font-size: 1.7rem; margin: 0 0 4px; letter-spacing: -.02em; }
+  .app p.sub { margin: 0; color: var(--ink-soft); font-size: .98rem; }
+
+  .modebar { display: inline-flex; gap: 4px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px; margin-top: 16px; }
+  .modebar button { border: 0; background: transparent; color: var(--ink-soft); font: inherit; font-weight: 600; padding: 7px 18px; border-radius: 999px; cursor: pointer; }
+  .modebar button[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); }
+
+  .grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 20px; align-items: start; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 20px 22px; margin-bottom: 20px; }
+  .card h2 { font-size: 1.04rem; margin: 0 0 2px; letter-spacing: -.01em; }
+  .card .hint { color: var(--ink-faint); font-size: .82rem; margin: 0 0 14px; }
+
+  .subhead { font-size: .8rem; font-weight: 700; color: var(--ink); margin: 2px 0 8px; text-transform: uppercase; letter-spacing: .03em; }
+  .divline { border: 0; border-top: 1px solid var(--line); margin: 16px 0; }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  label { display: block; font-size: .84rem; font-weight: 600; color: var(--ink-soft); margin-bottom: 6px; }
+  .with-prefix { position: relative; display: flex; align-items: stretch; }
+  .with-prefix .affix { display: inline-flex; align-items: center; padding: 0 11px; background: var(--panel-2); border: 1px solid var(--line); border-inline-end: 0; border-start-start-radius: 10px; border-end-start-radius: 10px; color: var(--ink-faint); font-size: .9rem; font-weight: 600; }
+  .with-prefix input { border-start-start-radius: 0; border-end-start-radius: 0; }
+  input[type="number"], input[type="text"] {
+    width: 100%; padding: 10px 12px; font: inherit; color: var(--ink);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; outline: none;
+  }
+  input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(47,109,246,.16); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .check { display: flex; align-items: flex-start; gap: 10px; padding: 12px 13px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
+  .check input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--brand); }
+  .check .t { font-size: .86rem; }
+  .check .t b { display: block; color: var(--ink); font-weight: 600; }
+  .check .t span { color: var(--ink-faint); font-size: .8rem; }
+
+  details.settings { border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); padding: 0; }
+  details.settings > summary { cursor: pointer; list-style: none; padding: 12px 14px; font-weight: 600; font-size: .88rem; color: var(--ink-soft); display: flex; justify-content: space-between; align-items: center; }
+  details.settings > summary::-webkit-details-marker { display: none; }
+  details.settings > summary .chev { color: var(--ink-faint); transition: transform .15s; }
+  details.settings[open] > summary .chev { transform: rotate(180deg); }
+  details.settings .body { padding: 0 14px 14px; }
+
+  .actions { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+  .btn { border: 1px solid var(--line); background: var(--panel); color: var(--ink-soft); font: inherit; font-weight: 600; font-size: .85rem; padding: 9px 14px; border-radius: 10px; cursor: pointer; }
+  .btn.primary { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+  .btn.small { padding: 5px 10px; font-size: .78rem; }
+
+  .verdict { background: linear-gradient(135deg, var(--win-bg), var(--panel)); border: 1px solid var(--win-line); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 16px; }
+  .verdict .eyebrow { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--brand); }
+  .verdict .headline { font-size: 1.35rem; font-weight: 700; letter-spacing: -.02em; margin: 4px 0 6px; }
+  .verdict .save { color: var(--ink-soft); font-size: .92rem; }
+  .verdict .save b { color: var(--good); }
+
+  .opt { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 13px 14px; border: 1px solid var(--line); border-radius: 11px; margin-bottom: 10px; background: var(--panel); }
+  .opt.win { border-color: var(--win-line); background: var(--win-bg); }
+  .opt.na { opacity: .55; }
+  .opt .name { font-weight: 600; font-size: .96rem; }
+  .opt .cost { font-weight: 700; font-size: 1.12rem; text-align: end; white-space: nowrap; }
+  .opt .meta { grid-column: 1 / 2; color: var(--ink-faint); font-size: .8rem; }
+  .opt .tag { grid-column: 2 / 3; justify-self: end; font-size: .73rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .tag.good { color: var(--good); background: var(--good-bg); }
+  .tag.warn { color: var(--warn); background: var(--warn-bg); }
+  .tag.bad { color: var(--bad); background: var(--bad-bg); }
+
+  .empty { color: var(--ink-faint); font-size: .9rem; text-align: center; padding: 30px 10px; }
+  .verdict.preview { background: var(--panel-2); border-style: dashed; }
+  .verdict.preview .eyebrow { color: var(--ink-faint); }
+  .headline.ghost { color: var(--ink-faint); font-weight: 600; font-size: 1.12rem; }
+  .opt.ghost { border-style: dashed; background: var(--panel-2); grid-template-columns: 1fr auto; }
+  .opt.ghost .name { color: var(--ink-soft); font-weight: 600; }
+  .skel { height: 14px; width: 70px; border-radius: 6px; justify-self: end; background: var(--line); }
+  .foot { color: var(--ink-faint); font-size: .76rem; margin-top: 18px; line-height: 1.5; }
+  .foot b { color: var(--ink-soft); }
+  /* Valuations chart */
+  .vrow { display: grid; grid-template-columns: 64px 1fr 104px; align-items: center; gap: 10px; margin-bottom: 11px; }
+  .vlabel { font-size: .84rem; font-weight: 600; }
+  .vtrack { position: relative; height: 24px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; }
+  .vfill { position: absolute; inset-block: 1px; inset-inline-start: 1px; border-radius: 5px; min-width: 3px; }
+  .vref { position: absolute; inset-block: 0; width: 2px; background: var(--ink-faint); opacity: .75; }
+  .vend { text-align: end; }
+  .vval { font-size: .9rem; font-weight: 700; }
+  .vdelta { font-size: .7rem; font-weight: 700; }
+  .vdelta.up { color: var(--good); } .vdelta.down { color: var(--bad); } .vdelta.flat { color: var(--ink-faint); }
+  @media print { .inputs { display: none; } .grid { grid-template-columns: 1fr; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="app">
+    <h1>Travel Points Optimizer</h1>
+    <p class="sub">Should you pay with points, miles, a free-night certificate, or cash? Enter what each option costs and get the cheapest answer instantly.</p>
+    <div class="modebar" role="group" aria-label="Booking type">
+      <button id="modeHotel" type="button" aria-pressed="true">🏨 Hotel</button>
+      <button id="modeFlight" type="button" aria-pressed="false">✈️ Flight</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- ============ INPUTS ============ -->
+    <section class="inputs">
+      <div class="card">
+        <h2>Book direct</h2>
+        <p class="hint" id="directHint">Book straight with Marriott — the cash price and your Bonvoy points.</p>
+
+        <div class="field">
+          <label for="cash">Cash price (total, incl. taxes &amp; fees)</label>
+          <div class="with-prefix"><span class="affix">$</span><input id="cash" type="number" min="0" step="1" placeholder="e.g. 480" inputmode="decimal"></div>
+        </div>
+
+        <div class="field" id="fifthField">
+          <label class="check" for="fifth">
+            <input id="fifth" type="checkbox">
+            <span class="t"><b>This is a 5+ night Marriott stay</b><span>Marriott gives the 5th award night free — I'll discount the points by 20%.</span></span>
+          </label>
+        </div>
+
+        <!-- Hotel: Bonvoy -->
+        <div id="hotelDirect">
+          <hr class="divline">
+          <div class="subhead">Marriott Bonvoy points</div>
+          <div class="row2">
+            <div class="field">
+              <label for="ptsA">Points required</label>
+              <input id="ptsA" type="number" min="0" step="1000" placeholder="e.g. 50000" inputmode="numeric">
+            </div>
+            <div class="field">
+              <label for="copayA">+ Cash co-pay</label>
+              <div class="with-prefix"><span class="affix">$</span><input id="copayA" type="number" min="0" step="1" placeholder="0" inputmode="decimal"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="check" for="certOn">
+              <input id="certOn" type="checkbox">
+              <span class="t"><b>I have a free-night certificate to use</b><span>Bonvoy credit-card annual award. I'll check it against the cap below.</span></span>
+            </label>
+            <div id="certDetail" style="display:none; margin-top:10px;">
+              <div class="row2">
+                <div class="field">
+                  <label for="certCap">Certificate cap (points)</label>
+                  <input id="certCap" type="number" min="0" step="5000" placeholder="35000" inputmode="numeric">
+                </div>
+                <div class="field">
+                  <label for="certVal">What the cert is worth to you ($)</label>
+                  <div class="with-prefix"><span class="affix">$</span><input id="certVal" type="number" min="0" step="5" placeholder="auto" inputmode="decimal"></div>
+                </div>
+              </div>
+              <label class="check" for="topOff" style="margin-bottom:8px;">
+                <input id="topOff" type="checkbox">
+                <span class="t"><b>Allow topping off with up to 15,000 points</b><span>If the award is just over the cap, add points to cover the difference.</span></span>
+              </label>
+              <div class="actions">
+                <button class="btn small" id="certUseit" type="button">It expires soon → value it at $0</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Flight: Alaska + Delta -->
+        <div id="flightDirect" style="display:none;">
+          <hr class="divline">
+          <div class="subhead">Alaska miles <span style="font-weight:500; text-transform:none; letter-spacing:0; color:var(--ink-faint);">(Atmos Rewards)</span></div>
+          <div class="row2">
+            <div class="field">
+              <label for="ptsAlaska">Miles required</label>
+              <input id="ptsAlaska" type="number" min="0" step="1000" placeholder="e.g. 25000" inputmode="numeric">
+            </div>
+            <div class="field">
+              <label for="copayAlaska">+ Cash / taxes</label>
+              <div class="with-prefix"><span class="affix">$</span><input id="copayAlaska" type="number" min="0" step="1" placeholder="0" inputmode="decimal"></div>
+            </div>
+          </div>
+          <hr class="divline">
+          <div class="subhead">Delta miles <span style="font-weight:500; text-transform:none; letter-spacing:0; color:var(--ink-faint);">(SkyMiles)</span></div>
+          <div class="row2">
+            <div class="field">
+              <label for="ptsDelta">Miles required</label>
+              <input id="ptsDelta" type="number" min="0" step="1000" placeholder="e.g. 30000" inputmode="numeric">
+            </div>
+            <div class="field">
+              <label for="copayDelta">+ Cash / taxes</label>
+              <div class="with-prefix"><span class="affix">$</span><input id="copayDelta" type="number" min="0" step="1" placeholder="0" inputmode="decimal"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Book through Chase</h2>
+        <p class="hint">Pay the same booking with Chase points <em>or</em> cash through Chase. Fill in either or both.</p>
+        <div class="row2">
+          <div class="field">
+            <label for="ptsB">Pay with points</label>
+            <input id="ptsB" type="number" min="0" step="1000" placeholder="e.g. 50525" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label for="copayB">+ Cash co-pay</label>
+            <div class="with-prefix"><span class="affix">$</span><input id="copayB" type="number" min="0" step="1" placeholder="0" inputmode="decimal"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="chaseCash">Or pay cash via the Chase portal ($) <span style="font-weight:400;color:var(--ink-faint)">— optional</span></label>
+          <div class="with-prefix"><span class="affix">$</span><input id="chaseCash" type="number" min="0" step="1" placeholder="e.g. 834" inputmode="decimal"></div>
+        </div>
+        <div class="field" id="editField">
+          <label class="check" for="editOn">
+            <input id="editOn" type="checkbox">
+            <span class="t"><b>This Chase booking includes &ldquo;The Edit&rdquo; perks</b><span>Applies to whichever Chase option you pick — points or portal cash. Their cash value lowers Chase's true cost.</span></span>
+          </label>
+          <div id="editDetail" style="display:none; margin-top:10px;">
+            <div class="row2">
+              <div class="field">
+                <label for="perkBreakfast">Free breakfast value ($)</label>
+                <div class="with-prefix"><span class="affix">$</span><input id="perkBreakfast" type="number" min="0" step="5" placeholder="e.g. 50" inputmode="decimal"></div>
+              </div>
+              <div class="field">
+                <label for="perkCredit">Property credit ($)</label>
+                <div class="with-prefix"><span class="affix">$</span><input id="perkCredit" type="number" min="0" step="5" placeholder="e.g. 100" inputmode="decimal"></div>
+              </div>
+            </div>
+            <div class="field">
+              <label for="perkOther">Other perks &amp; credits ($)</label>
+              <div class="with-prefix"><span class="affix">$</span><input id="perkOther" type="number" min="0" step="5" placeholder="upgrade, late checkout, resort credit…" inputmode="decimal"></div>
+            </div>
+            <p class="hint" id="perkTotalLine" style="margin:0;">Enter the value <em>to you</em> — the total is subtracted from the Chase true cost.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <details class="settings" id="settings">
+          <summary>Your point values <span class="chev">▾</span></summary>
+          <div class="body">
+            <p class="hint" style="margin-top:10px;">These are what each point is worth to you on average — the engine prices every option against them. Saved on this device.</p>
+            <div class="row2">
+              <div class="field" id="valBonvoyField">
+                <label for="valBonvoy">Bonvoy value (¢ per point)</label>
+                <input id="valBonvoy" type="number" min="0" step="0.01" placeholder="0.84" inputmode="decimal">
+              </div>
+              <div class="field" id="valAlaskaField" style="display:none;">
+                <label for="valAlaska">Alaska value (¢ per mile)</label>
+                <input id="valAlaska" type="number" min="0" step="0.01" placeholder="1.40" inputmode="decimal">
+              </div>
+              <div class="field" id="valDeltaField" style="display:none;">
+                <label for="valDelta">Delta value (¢ per mile)</label>
+                <input id="valDelta" type="number" min="0" step="0.01" placeholder="1.20" inputmode="decimal">
+              </div>
+              <div class="field">
+                <label for="valChase">Chase value (¢ per point)</label>
+                <input id="valChase" type="number" min="0" step="0.01" placeholder="2.05" inputmode="decimal">
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn primary small" id="saveSettings" type="button">Save values</button>
+              <button class="btn small" id="resetSettings" type="button">Reset to defaults</button>
+            </div>
+            <p class="hint" id="sourceNote" style="margin:12px 0 0; padding-top:10px; border-top:1px solid var(--line);"></p>
+          </div>
+        </details>
+        <div class="actions" style="margin-top:14px;">
+          <button class="btn" id="clearAll" type="button">Clear inputs</button>
+          <button class="btn" id="printBtn" type="button">Print / save PDF</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RESULTS ============ -->
+    <section class="results" aria-live="polite">
+      <div class="card" id="valCard">
+        <h2>Point values vs. the dollar</h2>
+        <p class="hint">What each point/mile is worth in cents — TPG, <span id="valMonth">June 2026</span>. The gray line marks <b>1.0¢</b> = the value of one cash dollar.</p>
+        <div id="valBars"></div>
+        <p class="hint" id="valTrendNote" style="margin-top:6px;"></p>
+      </div>
+      <div id="resultArea">
+        <div class="card"><div class="empty">Enter a cash price and at least one points option to see the recommendation.</div></div>
+      </div>
+      <div class="foot">
+        <b>How it works:</b> each option is converted to a true dollar cost — points are valued at your ¢-per-point setting, plus any cash. Lowest true cost wins. The "value" tag shows the cents-per-point you'd actually get; green means you're beating your own baseline (a good use of points), red means you'd be wasting them. Estimates only — confirm award availability and taxes before booking.
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var DEFAULTS = { valBonvoy: 0.84, valAlaska: 1.40, valDelta: 1.20, valChase: 2.05, certCap: 35000 };
+  var mode = "hotel";
+
+  // TPG valuation history (cents per point). The monthly refresh appends a new dated
+  // entry each month, so the trend chart below grows over time. Newest entry last.
+  var HISTORY = [
+    { month: "Jun 2026", bonvoy: 0.84, alaska: 1.40, delta: 1.20, chase: 2.05 }
+  ];
+  var VPROGS = [
+    { key: "chase",  name: "Chase",  color: "#2f6df6", modes: ["hotel","flight"] },
+    { key: "alaska", name: "Alaska", color: "#18794e", modes: ["flight"] },
+    { key: "delta",  name: "Delta",  color: "#7a5cc0", modes: ["flight"] },
+    { key: "bonvoy", name: "Bonvoy", color: "#c2671f", modes: ["hotel"] }
+  ];
+
+  function $(id){ return document.getElementById(id); }
+  function num(id){ var v = parseFloat($(id).value); return isFinite(v) ? v : NaN; }
+  function money(n){ return "$" + n.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0}); }
+  function money2(n){ return "$" + n.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
+  function pts(n){ return n.toLocaleString(undefined, {maximumFractionDigits:0}); }
+
+  /* ---------- settings persistence ---------- */
+  function loadSettings(){
+    var s = {};
+    try { s = JSON.parse(localStorage.getItem("tpo_settings_v2") || "{}"); } catch(e){ s = {}; }
+    ["valBonvoy","valAlaska","valDelta","valChase"].forEach(function(k){
+      $(k).value = (s[k] != null) ? s[k] : "";
+    });
+  }
+  function saveSettings(){
+    var s = {};
+    ["valBonvoy","valAlaska","valDelta","valChase"].forEach(function(k){
+      s[k] = $(k).value !== "" ? num(k) : null;
+    });
+    try { localStorage.setItem("tpo_settings_v2", JSON.stringify(s)); } catch(e){}
+    flash($("saveSettings"), "Saved ✓");
+  }
+  function flash(btn, txt){ var o = btn.textContent; btn.textContent = txt; setTimeout(function(){ btn.textContent = o; }, 1200); }
+
+  function val(id, def){ var v = num(id); return isFinite(v) && v > 0 ? v : def; }
+  function valBonvoy(){ return val("valBonvoy", DEFAULTS.valBonvoy); }
+  function valAlaska(){ return val("valAlaska", DEFAULTS.valAlaska); }
+  function valDelta(){ return val("valDelta", DEFAULTS.valDelta); }
+  function valChase(){ return val("valChase", DEFAULTS.valChase); }
+
+  /* ---------- source note ---------- */
+  var TPG = '<a href="https://thepointsguy.com/loyalty-programs/monthly-valuations/" target="_blank" rel="noopener">The Points Guy</a>';
+  function setSourceNote(){
+    var note;
+    if (mode === "hotel") {
+      note = "Default values reflect " + TPG + " valuations as of <b>June 2026</b> — Bonvoy 0.84¢, Chase 2.05¢. Refreshed monthly.";
+    } else {
+      note = "Default values reflect " + TPG + " valuations as of <b>June 2026</b> — Alaska 1.40¢, Delta 1.20¢, Chase 2.05¢. Refreshed monthly.";
+    }
+    $("sourceNote").innerHTML = note;
+  }
+
+  /* ---------- mode ---------- */
+  function show(id, on){ $(id).style.display = on ? "" : "none"; }
+  function setMode(m){
+    mode = m;
+    $("modeHotel").setAttribute("aria-pressed", m === "hotel");
+    $("modeFlight").setAttribute("aria-pressed", m === "flight");
+    var hotel = (m === "hotel");
+    $("directHint").textContent = hotel
+      ? "Book straight with Marriott — the cash price and your Bonvoy points."
+      : "Book straight with the airline — the cash price and your Alaska or Delta miles.";
+    show("hotelDirect", hotel);
+    show("fifthField", hotel);
+    show("editField", hotel);
+    show("flightDirect", !hotel);
+    show("valBonvoyField", hotel);
+    show("valAlaskaField", !hotel);
+    show("valDeltaField", !hotel);
+    if (!hotel) { $("editOn").checked = false; $("editDetail").style.display = "none"; }
+    setSourceNote();
+    renderValuations();
+    compute();
+  }
+  function switchMode(m){
+    if (m === mode) return;
+    clearInputs();
+    setMode(m);
+  }
+
+  /* ---------- clear ---------- */
+  var INPUT_IDS = ["cash","ptsA","copayA","ptsAlaska","copayAlaska","ptsDelta","copayDelta",
+                   "ptsB","copayB","chaseCash","certCap","certVal","perkBreakfast","perkCredit","perkOther"];
+  function clearInputs(){
+    INPUT_IDS.forEach(function(id){ $(id).value = ""; });
+    ["fifth","certOn","topOff","editOn"].forEach(function(id){ $(id).checked = false; });
+    $("certDetail").style.display = "none";
+    $("editDetail").style.display = "none";
+    $("perkTotalLine").innerHTML = "Enter the value <em>to you</em> — the total is subtracted from the Chase true cost.";
+  }
+
+  /* ---------- core computation ---------- */
+  function showPreview(cashEntered){
+    var names = (mode === "hotel")
+      ? ["Pay cash (direct)", "Bonvoy points", "Free-night certificate", "Chase points", "Chase portal (cash)"]
+      : ["Pay cash (direct)", "Alaska miles", "Delta miles", "Chase points", "Chase portal (cash)"];
+    var unit = (mode === "hotel") ? "points" : "miles";
+    var provider = (mode === "hotel") ? "hotel" : "airline";
+    var cta = cashEntered
+      ? "Add the " + unit + " a reward program is charging to compare against the cash price."
+      : "Enter the cash price and the " + unit + " the " + provider + " and reward programs are charging to begin.";
+    var rows = names.map(function(n){
+      return '<div class="opt ghost"><div class="name">' + n + '</div><div class="skel"></div></div>';
+    }).join("");
+    var html = "";
+    html += '<div class="verdict preview">';
+    html += '<div class="eyebrow">Recommended</div>';
+    html += '<div class="headline ghost">Your cheapest option will appear here</div>';
+    html += '<div class="save">' + cta + '</div>';
+    html += '</div>';
+    html += '<div class="card"><h2>Every option, ranked</h2>';
+    html += '<p class="hint">A live, ranked cost comparison appears here once the prices and ' + unit + ' are entered.</p>';
+    html += rows;
+    html += '<p class="hint" style="margin-top:10px;">These boxes fill in and re-sort automatically as you type — no button to press.</p>';
+    html += '</div>';
+    $("resultArea").innerHTML = html;
+  }
+
+  function compute(){
+    var cash = num("cash");
+    if (!isFinite(cash) || cash <= 0) { showPreview(false); return; }
+
+    var options = [];
+    options.push({ key:"cash", name:"Pay cash (direct)", cost: cash, available:true, meta:"Out of pocket: " + money(cash) });
+
+    if (mode === "hotel") {
+      var pA = num("ptsA"), cpA = isFinite(num("copayA")) ? num("copayA") : 0;
+      var fifth = $("fifth").checked;
+      var pAeff = isFinite(pA) ? (fifth ? pA * 0.8 : pA) : NaN;
+      if (isFinite(pAeff) && pAeff > 0) {
+        var costA = pAeff * valBonvoy()/100 + cpA;
+        var cppA = (cash - cpA) / pAeff * 100;
+        options.push({ key:"bonvoy", name:"Bonvoy points", cost: costA, available:true,
+          meta: pts(pAeff) + (fifth ? " pts (after 5th-night free)" : " pts") + (cpA>0 ? " + " + money(cpA) : ""),
+          cpp: cppA, baseline: valBonvoy() });
+      }
+      if ($("certOn").checked && isFinite(pA) && pA > 0) {
+        var cap = num("certCap"); if (!isFinite(cap) || cap <= 0) cap = DEFAULTS.certCap;
+        var certVal = $("certVal").value !== "" ? num("certVal") : (cap * valBonvoy()/100);
+        var over = pA - cap, available = true, topCost = 0, note = "";
+        if (over <= 0) { note = "Certificate covers it"; }
+        else if ($("topOff").checked && over <= 15000) { topCost = over * valBonvoy()/100; note = "Cert + " + pts(over) + " top-off pts"; }
+        else { available = false; note = "Award (" + pts(pA) + ") exceeds cap (" + pts(cap) + ")"; }
+        var costCert = certVal + topCost + cpA;
+        options.push({ key:"cert", name:"Free-night certificate", cost: costCert, available: available,
+          meta: available ? (note + (cpA>0 ? " + " + money(cpA) : "")) : note,
+          cppFull: cash / cap * 100, baseline: valBonvoy(), certUnavail: !available });
+      }
+    } else {
+      var pAl = num("ptsAlaska"), cpAl = isFinite(num("copayAlaska")) ? num("copayAlaska") : 0;
+      if (isFinite(pAl) && pAl > 0) {
+        var costAl = pAl * valAlaska()/100 + cpAl;
+        var cppAl = (cash - cpAl) / pAl * 100;
+        options.push({ key:"alaska", name:"Alaska miles", cost: costAl, available:true,
+          meta: pts(pAl) + " mi" + (cpAl>0 ? " + " + money(cpAl) : ""), cpp: cppAl, baseline: valAlaska() });
+      }
+      var pDe = num("ptsDelta"), cpDe = isFinite(num("copayDelta")) ? num("copayDelta") : 0;
+      if (isFinite(pDe) && pDe > 0) {
+        var costDe = pDe * valDelta()/100 + cpDe;
+        var cppDe = (cash - cpDe) / pDe * 100;
+        options.push({ key:"delta", name:"Delta miles", cost: costDe, available:true,
+          meta: pts(pDe) + " mi" + (cpDe>0 ? " + " + money(cpDe) : ""), cpp: cppDe, baseline: valDelta() });
+      }
+    }
+
+    // Chase (both modes)
+    var pB = num("ptsB"), cpB = isFinite(num("copayB")) ? num("copayB") : 0;
+    var chaseCash = num("chaseCash");
+    var refCash = (isFinite(chaseCash) && chaseCash > 0) ? chaseCash : cash;
+    var perkTotal = 0;
+    if (mode === "hotel" && $("editOn").checked) {
+      var pbk = num("perkBreakfast"), pcr = num("perkCredit"), pot = num("perkOther");
+      perkTotal = (isFinite(pbk)?pbk:0) + (isFinite(pcr)?pcr:0) + (isFinite(pot)?pot:0);
+      $("perkTotalLine").innerHTML = perkTotal > 0
+        ? "Total perk value: <b>" + money(perkTotal) + "</b> — subtracted from the Chase true cost."
+        : "Enter the value <em>to you</em> — the total is subtracted from the Chase true cost.";
+    }
+    if (isFinite(pB) && pB > 0) {
+      var costB = pB * valChase()/100 + cpB - perkTotal;
+      var cppB = (refCash - cpB) / pB * 100;
+      var metaB = pts(pB) + " pts" + (cpB>0 ? " + " + money(cpB) : "");
+      if (perkTotal > 0) metaB += " − " + money(perkTotal) + " perks";
+      options.push({ key:"b", name:"Chase points", cost: costB, available:true,
+        meta: metaB, cpp: cppB, baseline: valChase(), perks: perkTotal });
+    }
+    if (isFinite(chaseCash) && chaseCash > 0) {
+      var costBcash = chaseCash - perkTotal;
+      var metaBcash = money(chaseCash) + " cash via portal" + (perkTotal > 0 ? " − " + money(perkTotal) + " perks" : "");
+      options.push({ key:"bcash", name:"Chase portal (cash)", cost: costBcash, available:true, meta: metaBcash, perks: perkTotal });
+    }
+
+    if (options.filter(function(o){ return o.available; }).length < 2) { showPreview(true); return; }
+    render(options);
+  }
+
+  function render(options){
+    var avail = options.filter(function(o){ return o.available; });
+    avail.sort(function(a,b){ return a.cost - b.cost; });
+    var best = avail[0];
+
+    var html = "";
+    html += '<div class="verdict">';
+    html += '<div class="eyebrow">Recommended</div>';
+    html += '<div class="headline">' + best.name + ' &mdash; ' + money2(best.cost) + ' true cost</div>';
+    var bits = avail.filter(function(o){ return o !== best; }).map(function(o){
+      return { d: o.cost - best.cost, label: (o.key === "cash") ? "paying cash" : o.name.toLowerCase() };
+    }).filter(function(x){ return x.d > 0.5; }).map(function(x){
+      return '<b>' + money(x.d) + '</b> vs. ' + x.label;
+    });
+    html += '<div class="save">' + (bits.length ? "Saves " + bits.join(" · ") : "It's essentially a wash between the options — pick by what you'd rather keep.") + '</div>';
+    html += '</div>';
+
+    html += '<div class="card"><h2>Every option, ranked</h2><p class="hint">True cost = points valued at your rate + any cash. Lowest wins.</p>';
+    var ordered = avail.concat(options.filter(function(o){ return !o.available; }));
+    ordered.forEach(function(o){
+      var isWin = o.available && o === best;
+      html += '<div class="opt ' + (isWin ? "win" : "") + (o.available ? "" : " na") + '">';
+      html += '<div class="name">' + (isWin ? "★ " : "") + o.name + '</div>';
+      html += '<div class="cost">' + (o.available ? money2(o.cost) : "—") + '</div>';
+      html += '<div class="meta">' + (o.meta || "") + '</div>';
+      var tag = valueTag(o);
+      if (tag) html += '<div class="tag ' + tag.cls + '">' + tag.txt + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    $("resultArea").innerHTML = html;
+  }
+
+  function valueTag(o){
+    if (o.key === "cash") return null;
+    if (o.key === "bcash") return (o.perks > 0) ? { cls:"good", txt:"incl. " + money(o.perks) + " perks" } : null;
+    if (o.certUnavail) return { cls:"bad", txt:"Not eligible" };
+    var cpp = isFinite(o.cpp) ? o.cpp : (isFinite(o.cppFull) ? o.cppFull : NaN);
+    if (!isFinite(cpp)) return null;
+    var ratio = cpp / o.baseline;
+    var label = cpp.toFixed(2) + "¢/pt";
+    if (ratio >= 1.15) return { cls:"good", txt:label + " · great value" };
+    if (ratio >= 0.95) return { cls:"good", txt:label + " · solid" };
+    if (ratio >= 0.75) return { cls:"warn", txt:label + " · so-so" };
+    return { cls:"bad", txt:label + " · poor value" };
+  }
+
+  /* ---------- valuations chart ---------- */
+  function renderValuations(){
+    var last = HISTORY[HISTORY.length - 1];
+    var prev = HISTORY.length > 1 ? HISTORY[HISTORY.length - 2] : null;
+    $("valMonth").textContent = last.month;
+    var maxScale = 2.2;
+    var refPct = (1.0 / maxScale) * 100;
+    var rows = VPROGS.filter(function(p){ return p.modes.indexOf(mode) >= 0; })
+                     .sort(function(a, b){ return last[b.key] - last[a.key]; });
+    var html = "";
+    rows.forEach(function(p){
+      var v = last[p.key];
+      var fill = Math.max(2, v / maxScale * 100);
+      var delta;
+      if (prev && isFinite(prev[p.key])) {
+        var d = v - prev[p.key];
+        if (Math.abs(d) < 0.005) delta = '<div class="vdelta flat">no change</div>';
+        else if (d > 0) delta = '<div class="vdelta up">▲ +' + d.toFixed(2) + '¢ vs ' + prev.month + '</div>';
+        else delta = '<div class="vdelta down">▼ ' + d.toFixed(2) + '¢ vs ' + prev.month + '</div>';
+      } else {
+        delta = '<div class="vdelta flat">baseline</div>';
+      }
+      html += '<div class="vrow">';
+      html += '<div class="vlabel">' + p.name + '</div>';
+      html += '<div class="vtrack"><div class="vfill" style="width:' + fill.toFixed(1) + '%; background:' + p.color + ';"></div>'
+            + '<div class="vref" style="inset-inline-start:' + refPct.toFixed(1) + '%;"></div></div>';
+      html += '<div class="vend"><div class="vval">' + v.toFixed(2) + '¢</div>' + delta + '</div>';
+      html += '</div>';
+    });
+    $("valBars").innerHTML = html;
+    $("valTrendNote").innerHTML = prev
+      ? "Arrows compare " + last.month + " with " + prev.month + "."
+      : "Month-over-month tracking starts with " + last.month + " — each monthly refresh logs TPG's new figures here, so ▲/▼ changes will build over time.";
+  }
+
+  /* ---------- wiring ---------- */
+  function bind(){
+    INPUT_IDS.concat(["valBonvoy","valAlaska","valDelta","valChase"]).forEach(function(id){
+      $(id).addEventListener("input", compute);
+    });
+    ["fifth","certOn","topOff","editOn"].forEach(function(id){
+      $(id).addEventListener("change", compute);
+    });
+    $("certOn").addEventListener("change", function(){ $("certDetail").style.display = this.checked ? "block" : "none"; });
+    $("editOn").addEventListener("change", function(){ $("editDetail").style.display = this.checked ? "block" : "none"; });
+    $("modeHotel").addEventListener("click", function(){ switchMode("hotel"); });
+    $("modeFlight").addEventListener("click", function(){ switchMode("flight"); });
+    $("saveSettings").addEventListener("click", saveSettings);
+    $("resetSettings").addEventListener("click", function(){
+      $("valBonvoy").value = DEFAULTS.valBonvoy; $("valAlaska").value = DEFAULTS.valAlaska;
+      $("valDelta").value = DEFAULTS.valDelta; $("valChase").value = DEFAULTS.valChase;
+      saveSettings(); compute();
+    });
+    $("certUseit").addEventListener("click", function(){ $("certVal").value = 0; compute(); });
+    $("clearAll").addEventListener("click", function(){ clearInputs(); compute(); });
+    $("printBtn").addEventListener("click", function(){ window.print(); });
+  }
+
+  loadSettings();
+  bind();
+  setMode("hotel");
+})();
+</script>
+</body>
+</html>
