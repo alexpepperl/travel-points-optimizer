@@ -142,6 +142,9 @@
   .vval { font-size: .9rem; font-weight: 700; }
   .vdelta { font-size: .7rem; font-weight: 700; }
   .vdelta.up { color: var(--good); } .vdelta.down { color: var(--bad); } .vdelta.flat { color: var(--ink-faint); }
+  @media (max-width: 860px) {
+    button, input[type="number"], input[type="text"], details.settings > summary { min-height: 44px; }
+  }
   @media print { .inputs { display: none; } .grid { grid-template-columns: 1fr; } body { background: #fff; } }
 </style>
 </head>
