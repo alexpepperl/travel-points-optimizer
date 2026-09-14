@@ -331,7 +331,7 @@
     <section class="results" aria-live="polite">
       <div class="card" id="valCard">
         <h2>Point values vs. the dollar</h2>
-        <p class="hint">What each point/mile is worth in cents — TPG, <span id="valMonth">June 2026</span>. The gray line marks <b>1.0¢</b> = the value of one cash dollar.</p>
+        <p class="hint">What each point/mile is worth in cents — TPG, <span id="valMonth">latest update</span>. The gray line marks <b>1.0¢</b> = the value of one cash dollar.</p>
         <div id="valBars"></div>
         <p class="hint" id="valTrendNote" style="margin-top:6px;"></p>
       </div>
@@ -348,13 +348,14 @@
 <script>
 (function () {
   "use strict";
-  var DEFAULTS = { valBonvoy: 0.84, valAlaska: 1.40, valDelta: 1.20, valChase: 2.05, certCap: 35000 };
+  var DEFAULTS = { valBonvoy: 0.75, valAlaska: 1.55, valDelta: 1.20, valChase: 2.05, certCap: 35000 };
   var mode = "hotel";
 
   // TPG valuation history (cents per point). The monthly refresh appends a new dated
   // entry each month, so the trend chart below grows over time. Newest entry last.
   var HISTORY = [
-    { month: "Jun 2026", bonvoy: 0.84, alaska: 1.40, delta: 1.20, chase: 2.05 }
+    { month: "Jun 2026", bonvoy: 0.84, alaska: 1.40, delta: 1.20, chase: 2.05 },
+    { month: "Sep 2026", bonvoy: 0.75, alaska: 1.55, delta: 1.20, chase: 2.05 }
   ];
   var VPROGS = [
     { key: "chase",  name: "Chase",  color: "#2f6df6", modes: ["hotel","flight"] },
@@ -396,11 +397,11 @@
   /* ---------- source note ---------- */
   var TPG = '<a href="https://thepointsguy.com/loyalty-programs/monthly-valuations/" target="_blank" rel="noopener">The Points Guy</a>';
   function setSourceNote(){
-    var note;
+    var note, latest = HISTORY[HISTORY.length - 1];
     if (mode === "hotel") {
-      note = "Default values reflect " + TPG + " valuations as of <b>June 2026</b> — Bonvoy 0.84¢, Chase 2.05¢. Refreshed monthly.";
+      note = "Default values reflect " + TPG + " valuations as of <b>" + latest.month + "</b> — Bonvoy " + latest.bonvoy.toFixed(2) + "¢, Chase " + latest.chase.toFixed(2) + "¢. Refreshed monthly.";
     } else {
-      note = "Default values reflect " + TPG + " valuations as of <b>June 2026</b> — Alaska 1.40¢, Delta 1.20¢, Chase 2.05¢. Refreshed monthly.";
+      note = "Default values reflect " + TPG + " valuations as of <b>" + latest.month + "</b> — Alaska " + latest.alaska.toFixed(2) + "¢, Delta " + latest.delta.toFixed(2) + "¢, Chase " + latest.chase.toFixed(2) + "¢. Refreshed monthly.";
     }
     $("sourceNote").innerHTML = note;
   }

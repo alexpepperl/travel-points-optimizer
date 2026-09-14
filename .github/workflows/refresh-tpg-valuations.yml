@@ -1,0 +1,48 @@
+name: Refresh TPG valuations
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/refresh-tpg-valuations.yml"
+      - "scripts/update-tpg-valuations.mjs"
+      - "tests/update-tpg-valuations.test.mjs"
+  schedule:
+    - cron: "17 10 15 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-tpg-valuations
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Test valuation updater
+        run: node --test tests/update-tpg-valuations.test.mjs
+
+      - name: Refresh valuations from TPG
+        run: node scripts/update-tpg-valuations.mjs
+
+      - name: Commit updated valuations
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "TPG valuations have not changed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Refresh monthly TPG valuations"
+          git push
